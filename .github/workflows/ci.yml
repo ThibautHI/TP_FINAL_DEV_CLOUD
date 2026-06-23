@@ -72,7 +72,7 @@ jobs:
 
       # 7. Scan de sécurité Trivy (Bloque si CVE HIGH ou CRITICAL)
       - name: Scan CVE avec Trivy
-        uses: aquasecurity/trivy-action@0.20.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}:${{ github.sha }}
           format: 'table'
