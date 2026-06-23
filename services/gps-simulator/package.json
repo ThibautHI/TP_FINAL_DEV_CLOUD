@@ -1,0 +1,19 @@
+{
+  "name": "gps-simulator",
+  "version": "1.0.0",
+  "description": "Service de simulation de trajets de livreurs pour GreenLogistics",
+  "main": "server.js",
+  "scripts": {
+    "start": "bun server.js",
+    "dev": "bun --watch server.js",
+    "test": "echo \"No tests defined\" && exit 0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

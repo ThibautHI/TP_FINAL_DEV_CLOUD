@@ -1,0 +1,159 @@
+services:
+  # 1. Base de données PostgreSQL
+  postgres:
+    image: postgres:17-alpine
+    container_name: greenlogistics-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: greenlogistics
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Broker d'événements Redpanda (Kafka-compatible)
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.11
+    container_name: greenlogistics-broker
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 1G
+      - --overprovisioned
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr 0.0.0.0:8082
+      - --advertise-pandaproxy-addr localhost:8082
+      - --rpc-addr 0.0.0.0:33145
+      - --advertise-rpc-addr redpanda:33145
+      - --mode dev-container
+    ports:
+      - "9092:9092"
+      - "19092:19092"
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "info"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Redpanda Console pour voir graphiquement les messages et les topics
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v2.4.6
+    container_name: greenlogistics-console
+    entrypoint: /bin/sh
+    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console --config.filepath=/tmp/config.yml"
+    ports:
+      - "8080:8080"
+    environment:
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["redpanda:9092"]
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  # 3. Serveur SMTP de simulation MailHog
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: greenlogistics-mailhog
+    ports:
+      - "1025:1025" # Port SMTP
+      - "8025:8025" # Port UI Web
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "1025"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  # --- MICROSERVICES APPLICATIFS ---
+
+  # 4. Delivery Service (API & Web Dashboard)
+  delivery-service:
+    build:
+      context: ./services/delivery-service
+      dockerfile: Dockerfile
+    container_name: greenlogistics-delivery
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_HOST=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=greenlogistics
+      - DB_PORT=5432
+      - KAFKA_BROKER=redpanda:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+
+  # 5. GPS Ingestion Service (API Ingest)
+  gps-ingest-service:
+    build:
+      context: ./services/gps-ingest-service
+      dockerfile: Dockerfile
+    container_name: greenlogistics-ingest
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - KAFKA_BROKER=redpanda:9092
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  # 6. Notification Service (Alerte distance & SMTP mailer)
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: greenlogistics-notifications
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - DB_HOST=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=greenlogistics
+      - DB_PORT=5432
+      - KAFKA_BROKER=redpanda:9092
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+      mailhog:
+        condition: service_healthy
+
+  # 7. GPS Simulator (Simulateur de livreurs)
+  gps-simulator:
+    build:
+      context: ./services/gps-simulator
+      dockerfile: Dockerfile
+    container_name: greenlogistics-simulator
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - DELIVERY_SERVICE_URL=http://delivery-service:3000
+      - GPS_INGEST_SERVICE_URL=http://gps-ingest-service:3001
+    depends_on:
+      delivery-service:
+        condition: service_started
+      gps-ingest-service:
+        condition: service_started
+
+volumes:
+  pgdata:
