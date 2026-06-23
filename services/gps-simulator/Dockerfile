@@ -6,6 +6,10 @@ RUN bun install --production
 
 # Étape 2 : Runtime
 FROM oven/bun:1-alpine
+
+# Corriger les CVE de l'image de base Alpine en mettant à jour les paquets
+RUN apk update && apk upgrade --no-cache
+
 WORKDIR /usr/src/app
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY package.json ./

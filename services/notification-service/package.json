@@ -6,7 +6,7 @@
   "scripts": {
     "start": "bun server.js",
     "dev": "bun --watch server.js",
-    "test": "echo \"No tests defined\" && exit 0"
+    "test": "bun test"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
