@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenLogistics - Realtime Parcel Tracking</title>
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+  <!-- Custom Styling -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar glass">
+      <div class="brand">
+        <div class="logo">🟢</div>
+        <div class="brand-text">
+          <h1>GreenLogistics</h1>
+          <span>Suivi Écologique en Temps Réel</span>
+        </div>
+      </div>
+
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Rechercher un colis..." />
+      </div>
+
+      <div class="parcel-list-container">
+        <h2>Colis Actifs</h2>
+        <ul id="parcel-list" class="parcel-list">
+          <!-- Dynatiquement peuplé -->
+          <li class="loading">Chargement des colis...</li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Map Area -->
+      <div id="map" class="map-container"></div>
+
+      <!-- Info Overlay Panel (Glassmorphism) -->
+      <div id="info-panel" class="info-panel glass hidden">
+        <button id="close-panel-btn" class="close-btn">&times;</button>
+        <div class="panel-header">
+          <h3 id="parcel-title">Colis #id</h3>
+          <span id="parcel-status-badge" class="badge">Créé</span>
+        </div>
+        
+        <div class="panel-body">
+          <div class="info-row">
+            <span class="info-label">Description:</span>
+            <span id="parcel-desc" class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Email Destinataire:</span>
+            <span id="parcel-email" class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Destination Lat/Lng:</span>
+            <span id="parcel-dest-coords" class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Dernière Position:</span>
+            <span id="parcel-last-coords" class="info-value">Non disponible</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Notification 5 min:</span>
+            <span id="parcel-notified" class="badge-notified">Non envoyée</span>
+          </div>
+        </div>
+
+        <div class="panel-footer">
+          <div class="sim-controls">
+            <h4>Simuler un trajet</h4>
+            <button id="start-sim-btn" class="btn btn-primary">Lancer la simulation</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Indicator -->
+      <div class="connection-status glass">
+        <span class="status-dot online"></span> API Connectée
+      </div>
+    </main>
+  </div>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+  <!-- Custom JS -->
+  <script src="app.js"></script>
+</body>
+</html>
