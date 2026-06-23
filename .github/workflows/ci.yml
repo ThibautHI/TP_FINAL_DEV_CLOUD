@@ -33,6 +33,11 @@ jobs:
       - name: Checkout du code
         uses: actions/checkout@v4
 
+      # 1.5. Conversion du nom du dépôt en minuscules (requis par Docker)
+      - name: Formater le nom du dépôt en minuscules
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       # 2. Installation de Bun (exigence de rapidité et support natif de nos apps)
       - name: Configuration de Bun
         uses: oven-sh/setup-bun@v2
@@ -65,8 +70,8 @@ jobs:
           context: ./services/${{ matrix.service }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}:latest
+            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/${{ matrix.service }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/${{ matrix.service }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -74,7 +79,7 @@ jobs:
       - name: Scan CVE avec Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/${{ matrix.service }}:${{ github.sha }}
           format: 'table'
           exit-code: '1' # Fait échouer la pipeline s'il y a des failles HIGH/CRITICAL (exigence 4.4)
           ignore-unfixed: true
