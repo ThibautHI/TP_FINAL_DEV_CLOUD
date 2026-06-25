@@ -73,6 +73,7 @@ locals {
     "linkerd",
     "kubecost",
     "mail",
+    "argo-rollouts",
   ]
 }
 
@@ -351,6 +352,26 @@ module "helm_kubecost" {
   }
 
   depends_on = [module.helm_kps]
+}
+
+# --- 3.13 Argo Rollouts (Canary deployments operator) ---
+module "helm_argo_rollouts" {
+  source = "./modules/helm_deployment"
+
+  name             = "argo-rollouts"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-rollouts"
+  namespace        = "argo-rollouts"
+  create_namespace = false
+  environment      = var.environment
+  team             = var.team
+  timeout          = 300
+
+  set = {
+    "dashboard.enabled" = "false" # non requis localement, CLI suffit
+  }
+
+  depends_on = [kubernetes_namespace_v1.namespaces]
 }
 
 # ============================================================================

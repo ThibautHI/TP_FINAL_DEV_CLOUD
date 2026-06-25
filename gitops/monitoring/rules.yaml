@@ -1,0 +1,42 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: greenlogistics-slo-rules
+  namespace: monitoring
+  labels:
+    release: kps
+    team: greenlogistics
+    env: dev
+spec:
+  groups:
+    - name: greenlogistics-slos
+      rules:
+        # SLO 1 : Taux de succès HTTP sur delivery-service >= 99%
+        - record: slo:delivery_service_http_success_rate
+          expr: sum(rate(delivery_service_http_requests_total{status=~"2..|3.."}[5m])) / sum(rate(delivery_service_http_requests_total[5m]))
+        
+        # SLO 2 : Taux de succès HTTP sur gps-ingest-service >= 99%
+        - record: slo:gps_ingest_service_http_success_rate
+          expr: sum(rate(gps_ingest_service_http_requests_total{status=~"2..|3.."}[5m])) / sum(rate(gps_ingest_service_http_requests_total[5m]))
+
+        # Alerte si le taux de succès de delivery-service passe sous 99%
+        - alert: DeliveryServiceLowSuccessRate
+          expr: slo:delivery_service_http_success_rate < 0.99
+          for: 2m
+          labels:
+            severity: critical
+            team: greenlogistics
+          annotations:
+            summary: "Taux de succès critique sur delivery-service"
+            description: "Le taux de succès HTTP de delivery-service est de {{ $value | printf \"%.2f\" }}% sur les 2 dernières minutes."
+
+        # Alerte si le taux de succès de gps-ingest-service passe sous 99%
+        - alert: GpsIngestServiceLowSuccessRate
+          expr: slo:gps_ingest_service_http_success_rate < 0.99
+          for: 2m
+          labels:
+            severity: critical
+            team: greenlogistics
+          annotations:
+            summary: "Taux de succès critique sur gps-ingest-service"
+            description: "Le taux de succès HTTP de gps-ingest-service est de {{ $value | printf \"%.2f\" }}% sur les 2 dernières minutes."

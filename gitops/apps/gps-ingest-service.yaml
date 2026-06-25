@@ -1,0 +1,156 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gps-ingest-service
+  namespace: app
+  labels:
+    app: gps-ingest-service
+    team: greenlogistics
+    env: dev
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gps-ingest-service
+  namespace: app
+  labels:
+    app: gps-ingest-service
+    team: greenlogistics
+    env: dev
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gps-ingest-service
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app: gps-ingest-service
+        team: greenlogistics
+        env: dev
+    spec:
+      serviceAccountName: gps-ingest-service
+      containers:
+        - name: gps-ingest-service
+          image: ghcr.io/thibauthi/tp_final_dev_cloud/gps-ingest-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+              name: http
+          env:
+            - name: PORT
+              value: "3001"
+            - name: KAFKA_BROKER
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: KAFKA_BROKER
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gps-ingest-service
+  namespace: app
+  labels:
+    app: gps-ingest-service
+    team: greenlogistics
+    env: dev
+spec:
+  ports:
+    - port: 3001
+      targetPort: 3001
+      name: http
+  selector:
+    app: gps-ingest-service
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gps-ingest-service-ingress
+  namespace: app
+  labels:
+    app: gps-ingest-service
+    team: greenlogistics
+    env: dev
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /gps
+            pathType: Prefix
+            backend:
+              service:
+                name: gps-ingest-service
+                port:
+                  number: 3001
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gps-ingest-service-hpa
+  namespace: app
+  labels:
+    app: gps-ingest-service
+    team: greenlogistics
+    env: dev
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gps-ingest-service
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gps-ingest-service-netpol
+  namespace: app
+  labels:
+    app: gps-ingest-service
+    team: greenlogistics
+    env: dev
+spec:
+  podSelector:
+    matchLabels:
+      app: gps-ingest-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 3001
+  egress:
+    - {}

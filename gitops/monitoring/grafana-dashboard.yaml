@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: greenlogistics-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    team: greenlogistics
+    env: dev
+data:
+  greenlogistics-dashboard.json: |
+    {
+      "id": null,
+      "title": "GreenLogistics - Dashboard SRE",
+      "tags": ["greenlogistics", "sre"],
+      "style": "dark",
+      "timezone": "browser",
+      "editable": true,
+      "hideControls": false,
+      "graphTooltip": 1,
+      "panels": [
+        {
+          "type": "stat",
+          "title": "SLO - Succès Delivery Service",
+          "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
+          "id": 1,
+          "targets": [
+            {
+              "expr": "slo:delivery_service_http_success_rate * 100",
+              "legendFormat": "Taux de succès"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "value": null, "color": "red" },
+                  { "value": 98, "color": "orange" },
+                  { "value": 99, "color": "green" }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "type": "stat",
+          "title": "SLO - Succès GPS Ingest Service",
+          "gridPos": { "h": 6, "w": 8, "x": 8, "y": 0 },
+          "id": 2,
+          "targets": [
+            {
+              "expr": "slo:gps_ingest_service_http_success_rate * 100",
+              "legendFormat": "Taux de succès"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "value": null, "color": "red" },
+                  { "value": 98, "color": "orange" },
+                  { "value": 99, "color": "green" }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Nombre de Colis Créés",
+          "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
+          "id": 3,
+          "targets": [
+            {
+              "expr": "sum(delivery_service_http_requests_total{route=\"/parcels\", method=\"POST\", status=\"201\"})",
+              "legendFormat": "Colis créés"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": { "mode": "palette-classic" }
+            }
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Latence HTTP P95 (secondes)",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+          "id": 4,
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(delivery_service_http_request_duration_seconds_bucket[5m])) by (le))",
+              "legendFormat": "Delivery Service P95"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(gps_ingest_service_http_request_duration_seconds_bucket[5m])) by (le))",
+              "legendFormat": "GPS Ingest Service P95"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth"
+              }
+            }
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Débit de requêtes (Req/sec)",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+          "id": 5,
+          "targets": [
+            {
+              "expr": "sum(rate(delivery_service_http_requests_total[1m]))",
+              "legendFormat": "Delivery Service"
+            },
+            {
+              "expr": "sum(rate(gps_ingest_service_http_requests_total[1m]))",
+              "legendFormat": "GPS Ingest"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "rps",
+              "custom": {
+                "drawStyle": "line"
+              }
+            }
+          }
+        }
+      ],
+      "schemaVersion": 36,
+      "version": 1
+    }

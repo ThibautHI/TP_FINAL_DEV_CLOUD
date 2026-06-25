@@ -1,0 +1,73 @@
+```mermaid
+flowchart TB
+    subgraph Cluster kind (Kubernetes)
+        subgraph ingress-nginx [Namespace: ingress-nginx]
+            IngressController[Ingress NGINX Controller]
+        end
+
+        subgraph app [Namespace: app - Linkerd Mesh Injected]
+            DeliveryService[delivery-service :3000]
+            GpsIngestService[gps-ingest-service :3001]
+            NotificationService[notification-service :3002]
+            GpsSimulator[gps-simulator :3003]
+            K8sSecret[K8s Secret: api-secret]
+        end
+
+        subgraph db [Namespace: db]
+            Postgres[(PostgreSQL)]
+        end
+
+        subgraph messaging [Namespace: messaging]
+            Redpanda[Redpanda Broker]
+        end
+
+        subgraph mail [Namespace: mail]
+            MailHog[MailHog SMTP Server]
+        end
+
+        subgraph vault [Namespace: vault]
+            Vault[HashiCorp Vault]
+        end
+
+        subgraph external-secrets [Namespace: external-secrets]
+            ESO[External Secrets Operator]
+        end
+
+        subgraph monitoring [Namespace: monitoring]
+            Prometheus[Prometheus]
+            Loki[Loki]
+            Grafana[Grafana Dashboard]
+        end
+    end
+
+    %% External Flow
+    Client([Navigateur / Client Externe]) -->|Port 80/443| IngressController
+    IngressController -->|/| DeliveryService
+    IngressController -->|/gps| GpsIngestService
+
+    %% Apps internal communication
+    GpsSimulator -->|1. GET /parcels| DeliveryService
+    GpsSimulator -->|2. POST /gps| GpsIngestService
+    GpsIngestService -->|3. Publish GPS location event| Redpanda
+    DeliveryService -->|4. Consume GPS location event| Redpanda
+    DeliveryService -->|5. Store route in DB| Postgres
+    NotificationService -->|6. Consume GPS location event| Redpanda
+    NotificationService -->|7. Calculate distance & update status| Postgres
+    NotificationService -->|8. Send Email Alert| MailHog
+
+    %% Secrets integration
+    Vault -.->|Pull secrets| ESO
+    ESO -.->|Create/Sync Secret| K8sSecret
+    K8sSecret -.->|Inject Env| DeliveryService
+    K8sSecret -.->|Inject Env| GpsIngestService
+    K8sSecret -.->|Inject Env| NotificationService
+
+    %% Monitoring integration
+    Prometheus -.->|Scrape /metrics| DeliveryService
+    Prometheus -.->|Scrape /metrics| GpsIngestService
+    Prometheus -.->|Scrape /metrics| NotificationService
+    Loki -.->|Collect Logs| DeliveryService
+    Loki -.->|Collect Logs| GpsIngestService
+    Loki -.->|Collect Logs| NotificationService
+    Grafana -.->|Query Metrics/Logs| Prometheus & Loki
+```

@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gps-simulator
+  namespace: app
+  labels:
+    app: gps-simulator
+    team: greenlogistics
+    env: dev
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gps-simulator
+  namespace: app
+  labels:
+    app: gps-simulator
+    team: greenlogistics
+    env: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gps-simulator
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app: gps-simulator
+        team: greenlogistics
+        env: dev
+    spec:
+      serviceAccountName: gps-simulator
+      containers:
+        - name: gps-simulator
+          image: ghcr.io/thibauthi/tp_final_dev_cloud/gps-simulator:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3003
+              name: http
+          env:
+            - name: PORT
+              value: "3003"
+            - name: DELIVERY_SERVICE_URL
+              value: "http://delivery-service.app.svc.cluster.local:3000"
+            - name: GPS_INGEST_SERVICE_URL
+              value: "http://gps-ingest-service.app.svc.cluster.local:3001"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gps-simulator-netpol
+  namespace: app
+  labels:
+    app: gps-simulator
+    team: greenlogistics
+    env: dev
+spec:
+  podSelector:
+    matchLabels:
+      app: gps-simulator
+  policyTypes:
+    - Egress
+  egress:
+    - {}

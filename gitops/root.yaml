@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root-apps
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/ThibautHI/TP_FINAL_DEV_CLOUD.git
+    targetRevision: develop
+    path: gitops/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

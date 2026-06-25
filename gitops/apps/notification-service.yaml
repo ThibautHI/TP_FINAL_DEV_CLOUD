@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: notification-service
+  namespace: app
+  labels:
+    app: notification-service
+    team: greenlogistics
+    env: dev
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: app
+  labels:
+    app: notification-service
+    team: greenlogistics
+    env: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app: notification-service
+        team: greenlogistics
+        env: dev
+    spec:
+      serviceAccountName: notification-service
+      containers:
+        - name: notification-service
+          image: ghcr.io/thibauthi/tp_final_dev_cloud/notification-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3002
+              name: http
+          env:
+            - name: PORT
+              value: "3002"
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: DB_HOST
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: DB_PASSWORD
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: DB_NAME
+            - name: DB_PORT
+              value: "5432"
+            - name: KAFKA_BROKER
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: KAFKA_BROKER
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: SMTP_PORT
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 3002
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 3002
+            initialDelaySeconds: 10
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: app
+  labels:
+    app: notification-service
+    team: greenlogistics
+    env: dev
+spec:
+  ports:
+    - port: 3002
+      targetPort: 3002
+      name: http
+  selector:
+    app: notification-service
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: notification-service-netpol
+  namespace: app
+  labels:
+    app: notification-service
+    team: greenlogistics
+    env: dev
+spec:
+  podSelector:
+    matchLabels:
+      app: notification-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 3002
+  egress:
+    - {}

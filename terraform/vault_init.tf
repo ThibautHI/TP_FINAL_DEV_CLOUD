@@ -12,6 +12,7 @@ resource "null_resource" "vault_init" {
   triggers = {
     vault_release     = module.helm_vault.release_name
     es_release        = module.helm_external_secrets.release_name
+    rollouts_release  = module.helm_argo_rollouts.release_name
   }
 
   provisioner "local-exec" {
@@ -61,6 +62,12 @@ resource "null_resource" "vault_init" {
       if (-not $success) {
         throw "Impossible d'appliquer external-secrets-setup.yaml après $maxRetries tentatives."
       }
+
+      Write-Host "=== Attente qu'ArgoCD soit ready ==="
+      kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=180s
+
+      Write-Host "=== Bootstrapping de l'application root ArgoCD (App of Apps) ==="
+      kubectl apply -f "../gitops/root.yaml"
     EOT
   }
 
@@ -69,6 +76,8 @@ resource "null_resource" "vault_init" {
     module.helm_external_secrets,
     module.helm_postgres,
     module.helm_redpanda,
+    module.helm_argocd,
+    module.helm_argo_rollouts,
     kubernetes_deployment_v1.mailhog,
   ]
 }
