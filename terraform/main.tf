@@ -156,6 +156,7 @@ module "helm_argocd" {
     "server.service.type"          = "NodePort"
     "server.service.nodePortHttp"  = "30080"
     "configs.params.server\\.insecure" = "true"
+    "configs.secret.argocdServerAdminPassword" = "$$2a$$10$$WWBJNyYw2XaKeVKbAG0MnuProSDp7ZVX6hpaw3.UWsfesTG0uKJkS"
   }
 
   depends_on = [kubernetes_namespace_v1.namespaces]
@@ -177,6 +178,7 @@ module "helm_kps" {
   set = {
     "grafana.service.type"                            = "NodePort"
     "grafana.service.nodePort"                        = "30090"
+    "grafana.adminPassword"                           = "admin"
     "prometheus.prometheusSpec.retention"              = "2d"
     "prometheus.prometheusSpec.resources.requests.memory" = "512Mi"
     "prometheus.prometheusSpec.resources.limits.memory"   = "1Gi"
