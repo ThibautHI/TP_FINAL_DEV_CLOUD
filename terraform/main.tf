@@ -111,9 +111,13 @@ module "helm_ingress_nginx" {
   timeout          = 300
 
   set = {
-    "controller.hostPort.enabled"  = "true"
-    "controller.service.type"      = "NodePort"
-    "controller.watchIngressWithoutClass" = "true"
+    "controller.hostPort.enabled"                       = "true"
+    "controller.service.type"                           = "NodePort"
+    "controller.watchIngressWithoutClass"               = "true"
+    "controller.nodeSelector.kubernetes\\.io/hostname"  = "${var.cluster_name}-control-plane"
+    "controller.tolerations[0].key"                     = "node-role.kubernetes.io/control-plane"
+    "controller.tolerations[0].operator"                = "Exists"
+    "controller.tolerations[0].effect"                  = "NoSchedule"
   }
 
   depends_on = [kubernetes_namespace_v1.namespaces]
@@ -156,7 +160,7 @@ module "helm_argocd" {
     "server.service.type"          = "NodePort"
     "server.service.nodePortHttp"  = "30080"
     "configs.params.server\\.insecure" = "true"
-    "configs.secret.argocdServerAdminPassword" = "$$2a$$10$$WWBJNyYw2XaKeVKbAG0MnuProSDp7ZVX6hpaw3.UWsfesTG0uKJkS"
+    "configs.secret.argocdServerAdminPassword" = "$2a$10$WWBJNyYw2XaKeVKbAG0MnuProSDp7ZVX6hpaw3.UWsfesTG0uKJkS"
   }
 
   depends_on = [kubernetes_namespace_v1.namespaces]
