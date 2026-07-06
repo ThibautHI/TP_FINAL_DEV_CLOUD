@@ -197,6 +197,9 @@ start_port_forward() {
     # 5. Kubecost (FinOps)
     kubectl port-forward service/kubecost-cost-analyzer -n kubecost 9090:9090 > /tmp/pf-kubecost.log 2>&1 &
 
+    # 6. GPS Simulator API
+    kubectl port-forward deployment/gps-simulator -n app 3003:3003 > /tmp/pf-simulator.log 2>&1 &
+
     sleep 2
     echo -e "${GREEN}[V] Redirections lancées avec succès !${NC}"
     echo ""

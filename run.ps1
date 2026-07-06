@@ -26,13 +26,15 @@ function Check-Prerequisites {
     if ($null -eq $dockerCmd) {
         Write-Host "[X] Docker n'est pas installe." -ForegroundColor Red
         $missing++
-    } else {
+    }
+    else {
         # Verifier si Docker est demarre
         & docker info >$null 2>&1
         if ($LASTEXITCODE -ne 0) {
             Write-Host "[!] Docker est installe mais n'est pas demarre. Veuillez demarrer Docker Desktop." -ForegroundColor Yellow
             $missing++
-        } else {
+        }
+        else {
             Write-Host "[V] Docker est installe et en cours d'execution." -ForegroundColor Green
         }
     }
@@ -42,7 +44,8 @@ function Check-Prerequisites {
     if ($null -eq $tfCmd) {
         Write-Host "[X] Terraform n'est pas installe." -ForegroundColor Red
         $missing++
-    } else {
+    }
+    else {
         $tfVer = & terraform -v | Select-Object -First 1
         Write-Host "[V] Terraform est installe ($tfVer)." -ForegroundColor Green
     }
@@ -51,7 +54,8 @@ function Check-Prerequisites {
     $helmCmd = Get-Command helm -ErrorAction SilentlyContinue
     if ($null -eq $helmCmd) {
         Write-Host "[!] Helm n'est pas installe. Requis pour le mode Kubernetes." -ForegroundColor Yellow
-    } else {
+    }
+    else {
         Write-Host "[V] Helm est installe." -ForegroundColor Green
     }
 
@@ -59,7 +63,8 @@ function Check-Prerequisites {
     $kubectlCmd = Get-Command kubectl -ErrorAction SilentlyContinue
     if ($null -eq $kubectlCmd) {
         Write-Host "[!] kubectl n'est pas installe. Requis pour interagir avec Kubernetes." -ForegroundColor Yellow
-    } else {
+    }
+    else {
         Write-Host "[V] kubectl est installe." -ForegroundColor Green
     }
 
@@ -67,7 +72,8 @@ function Check-Prerequisites {
     $kindCmd = Get-Command kind -ErrorAction SilentlyContinue
     if ($null -eq $kindCmd) {
         Write-Host "[!] kind n'est pas installe. Requis pour creer le cluster Kubernetes local." -ForegroundColor Yellow
-    } else {
+    }
+    else {
         Write-Host "[V] kind est installe." -ForegroundColor Green
     }
 
@@ -130,10 +136,12 @@ function Deploy-Kubernetes {
             Write-Host "Prochaines etapes recommandees :" -ForegroundColor Yellow
             Write-Host "1. Attendez 2-3 minutes pour que tous les Pods soient prets ('kubectl get pods -A')"
             Write-Host "2. Lancez l'option [3] du menu de ce script pour activer les acces locaux (Port-Forwarding)" -ForegroundColor Yellow
-        } else {
+        }
+        else {
             Write-Host "[X] Une erreur est survenue lors de l'application de Terraform." -ForegroundColor Red
         }
-    } finally {
+    }
+    finally {
         Pop-Location
     }
 
@@ -164,7 +172,8 @@ function Deploy-DockerCompose {
         Write-Host "  - Console Redpanda (Broker Kafka)     : http://localhost:8080"
         Write-Host "  - Simulateur GPS                      : http://localhost:3003"
         Write-Host "  - MailHog (Serveur Mail Simule)       : http://localhost:8025"
-    } else {
+    }
+    else {
         Write-Host "[X] Une erreur est survenue lors du demarrage de Docker Compose." -ForegroundColor Red
     }
 
@@ -204,13 +213,14 @@ function Start-PortForward {
     Start-Process kubectl -ArgumentList "port-forward service/kps-grafana -n monitoring 3004:80" -WindowStyle Hidden
     Start-Process kubectl -ArgumentList "port-forward service/mailhog -n mail 8025:8025" -WindowStyle Hidden
     Start-Process kubectl -ArgumentList "port-forward service/kubecost-cost-analyzer -n kubecost 9090:9090" -WindowStyle Hidden
+    Start-Process kubectl -ArgumentList "port-forward deployment/gps-simulator -n app 3003:3003" -WindowStyle Hidden
 
     Start-Sleep -Seconds 2
     Write-Host "[V] Redirections lancees avec succes !" -ForegroundColor Green
     Write-Host ""
     Write-Host "Liens d'acces a vos applications Kubernetes :" -ForegroundColor Green
     Write-Host "  - Carte temps reel (Leaflet)     : http://localhost:8000" -ForegroundColor Blue
-    Write-Host "  - ArgoCD Console Web (GitOps)     : https://localhost:8080 (admin / Root123! ou MDP genere)" -ForegroundColor Blue
+    Write-Host "  - ArgoCD Console Web (GitOps)     : https://localhost:8080" -ForegroundColor Blue
     Write-Host "  - Grafana (Monitoring and SLOs)     : http://localhost:3004" -ForegroundColor Blue
     Write-Host "  - MailHog (Simulateur d'e-mails)   : http://localhost:8025" -ForegroundColor Blue
     Write-Host "  - Kubecost (Analyse FinOps)       : http://localhost:9090" -ForegroundColor Blue
