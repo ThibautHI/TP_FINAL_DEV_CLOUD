@@ -13,11 +13,11 @@ spec:
       rules:
         # SLO 1 : Taux de succès HTTP sur delivery-service >= 99%
         - record: slo:delivery_service_http_success_rate
-          expr: (sum(rate(delivery_service_http_requests_total{status=~"2..|3.."}[5m])) / sum(rate(delivery_service_http_requests_total[5m]))) or vector(1)
+          expr: (sum(rate(delivery_service_http_requests_total{status=~"2..|3.."}[5m])) / (sum(rate(delivery_service_http_requests_total[5m])) > 0)) or vector(1)
         
         # SLO 2 : Taux de succès HTTP sur gps-ingest-service >= 99%
         - record: slo:gps_ingest_service_http_success_rate
-          expr: (sum(rate(gps_ingest_requests_total{status=~"2..|3.."}[5m])) / sum(rate(gps_ingest_requests_total[5m]))) or vector(1)
+          expr: (sum(rate(gps_ingest_requests_total{status=~"2..|3.."}[5m])) / (sum(rate(gps_ingest_requests_total[5m])) > 0)) or vector(1)
 
         # Alerte si le taux de succès de delivery-service passe sous 99%
         - alert: DeliveryServiceLowSuccessRate
