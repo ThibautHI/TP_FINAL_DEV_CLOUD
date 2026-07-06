@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: delivery-service-monitor
+  namespace: app
+  labels:
+    release: kps
+    team: greenlogistics
+    env: dev
+spec:
+  selector:
+    matchLabels:
+      app: delivery-service
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gps-ingest-service-monitor
+  namespace: app
+  labels:
+    release: kps
+    team: greenlogistics
+    env: dev
+spec:
+  selector:
+    matchLabels:
+      app: gps-ingest-service
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

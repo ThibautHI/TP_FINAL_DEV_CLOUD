@@ -123,7 +123,7 @@ data:
               "legendFormat": "Delivery Service"
             },
             {
-              "expr": "sum(rate(gps_ingest_service_http_requests_total[1m]))",
+              "expr": "sum(rate(gps_ingest_requests_total[1m]))",
               "legendFormat": "GPS Ingest"
             }
           ],
